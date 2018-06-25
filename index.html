@@ -1,0 +1,30 @@
+<!DOCTYPE>
+<html>
+<head>
+  <link rel='stylesheet' href='/style.css'>
+</head>
+<body>
+  <button id="btn">发起请求</button>
+  <a href="/login">登录</a>
+  <a href="/register">注册</a>
+  <script type='text/javascript' src='/main.js'></script>
+  <script>
+    btn.addEventListener('click',function(){
+      let request = new XMLHttpRequest();
+      request.onreadystatechange = function(){
+        if(request.readyState === 4){
+          if(request.status >= 200 && request.status < 300){
+            let data = JSON.parse(request.responseText);
+            console.log(data);  
+            console.log('请求成功');
+          }else if(request.status >= 400){
+            console.log('请求失败');
+          }
+        }
+      }
+      request.open('get','/xxx');
+      request.send();
+    })
+  </script>
+</body>
+</html>
