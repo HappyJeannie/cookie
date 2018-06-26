@@ -77,17 +77,19 @@
             console.log(res.responseJSON)
             $('.tips').stop().hide();
             $('input').val('');
+            alert('登录成功');
           },
           (res) =>{
             console.log('fail')
             console.log(res.responseJSON)
             let errors = res.responseJSON.errors;
+            $('.tips').stop().hide();
             if(errors.email){
-              $('.tips').stop().hide();
-              $('#loginForm').find('[name="email"]').parent().next().html('邮箱有误').stop().show();
+              $('#loginForm').find('[name="email"]').parent().next().html(errors.email).stop().show();
             }else if(errors.password){
-              $('.tips').stop().hide();
-              $('#loginForm').find('[name="password"]').parent().next().html('密码有误').stop().show();
+              $('#loginForm').find('[name="password"]').parent().next().html(errors.password).stop().show();
+            }else if(errors.check){
+              $('#loginForm').find('[name="email"]').parent().next().html(errors.check).stop().show();
             }
           }
         )

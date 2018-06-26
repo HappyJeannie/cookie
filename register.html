@@ -91,13 +91,13 @@
             let errors = res.responseJSON.errors;
             if(errors.email){
               $('.tips').stop().hide();
-              $('#registForm').find('[name="email"]').parent().next().html('邮箱有误').stop().show();
+              $('#registForm').find('[name="email"]').parent().next().html(errors.email).stop().show();
             }else if(errors.password){
               $('.tips').stop().hide();
-              $('#registForm').find('[name="password"]').parent().next().html('密码有误').stop().show();
+              $('#registForm').find('[name="password"]').parent().next().html(errors.password).stop().show();
             }else if(errors.confirm){
               $('.tips').stop().hide();
-              $('#registForm').find('[name="password_confirmation"]').parent().next().html('密码不一致').stop().show();
+              $('#registForm').find('[name="password_confirmation"]').parent().next().html(errors.confirm).stop().show();
             }
           }
         )

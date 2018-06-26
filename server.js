@@ -24,7 +24,6 @@ var server = http.createServer((req,res)=>{
   }else if(path === '/login' && method === 'post'){
     readBody(req)
       .then((data) => {
-        console.log(data);
         let hash = {};
         let arr = data.split('&');
         arr.forEach((key) => {
@@ -32,27 +31,67 @@ var server = http.createServer((req,res)=>{
           hash[val[0]] = decodeURIComponent(val[1])
         })
         let {email,password} = hash;
-        if(email.indexOf('@') === -1 || email === ''){
+        if(email.indexOf('@') === -1 || email.length === 0){
           res.statusCode = 400;
           res.setHeader('Content-Type','application/json;utf-8');
           res.write(`{
             "errors":{
-              "email" : "email is wrong"
+              "email" : "邮箱格式错误"
             }
           }`)
-        }else if(password === ''){
-          res.statusCode === 400;
+        }else if(password.length === 0){
+          res.statusCode = 400;
           res.setHeader('Content-Type','application/json;utf-8');
           res.write(`{
             "errors":{
-              "password" : "password is wrong"
+              "password" : "密码必填"
             }
           }`)
         }else {
-          res.statusCode = 200;
-          res.write(`{
-            "success":"ok"
-          }`)
+          let user = fs.readFileSync('./db/users','utf-8');
+          try{
+            user = JSON.parse(user);
+          }catch(exception){
+            user = [];
+          }
+          let isExit = false;
+          let isCorrect = false;
+          for(let i = 0 ;i<user.length;i++){
+            if(user[i].email === email && user[i].password === password){
+              isExit = true;
+              isCorrect = true;
+            }else if(user[i].email === email && user[i].password != password){
+              isExit = true;
+              isCorrect = false;
+            }
+          }
+          if(isExit && isCorrect){
+            //用户名密码正确
+            res.statusCode = 200;
+            res.setHeader('Content-Type','application/json;utf-8');
+            res.write(`{
+              "data":{
+                "success":"登录成功"
+              }
+            }`)
+          }else if(isExit && !isCorrect){
+            //用户名密码错误
+            res.statusCode = 401;
+            res.write(`{
+              "errors":{
+                "check":"账号密码不匹配"
+              }
+            }`)
+          }else{
+            //用户不存在
+            res.statusCode = 401;
+            res.write(`{
+              "errors":{
+                "check":"用户不存在"
+              }
+            }`)
+          }
+          
         }
         res.end();
       })
@@ -81,7 +120,7 @@ var server = http.createServer((req,res)=>{
           res.setHeader('Content-Type','application/json;utf-8');
           res.write(`{
             "errors":{
-              "email" : "email is wrong"
+              "email" : "邮箱格式错误"
             }
           }`)
         }else if(password === ''){
@@ -89,7 +128,7 @@ var server = http.createServer((req,res)=>{
           res.setHeader('Content-Type','application/json;utf-8');
           res.write(`{
             "errors":{
-              "password" : "password is wrong"
+              "password" : "密码错误"
             }
           }`)
         }else if(password_confirmation != password){
@@ -98,21 +137,46 @@ var server = http.createServer((req,res)=>{
           res.setHeader('Content-Type','application/json;utf-8');
           res.write(`{
             "errors":{
-              "confirm" : "passwords is not same"
+              "confirm" : "密码不一致"
             }
           }`)
         }else {
-          console.log('222')
-          res.statusCode = 200;
-          res.write(`{
-            "success":"ok"
-          }`)
+          res.setHeader('Content-Type','application/json;utf-8');
           //将数据写入数据库
-          let user = JSON.parse(fs.readFileSync('./db/users'));
-          let newUser = {
-            "email":
+          let user = fs.readFileSync('./db/users','utf-8');
+          try{
+            user = JSON.parse(user)
+          }catch(exception){
+            user = []
           }
-
+          let isInUse = false;
+          for(let i = 0;i<user.length;i++){
+            if(user[i].email === email){
+              isInUse = true;
+            }
+          }
+          if(isInUse){
+            //邮箱被占用
+            res.statusCode = 400;
+            res.write(`{
+              "errors":{
+                "email":"邮箱被占用"
+              }
+            }`)
+          }else{
+            res.statusCode = 200;
+            res.write(`{
+              "success":"ok"
+            }`)
+            let newUser = {
+              "email": email,
+              "password":password
+            }
+            user.push(newUser);
+            let users = JSON.stringify(user);
+            fs.writeFileSync('./db/users',users);
+          }
+          
         }
         res.end();
       })
