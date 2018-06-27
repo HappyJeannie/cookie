@@ -13,15 +13,12 @@ var server = http.createServer((req,res)=>{
     res.statusCode = 200;
     let str = fs.readFileSync('./index.html','utf8');
     res.setHeader('Content-Type','text/html;charset=utf-8');
-    console.log(req.headers.cookie);
-    
     let cookies = req.headers.cookie === undefined ? [] : req.headers.cookie.split('; ');
     let hash = {};
     cookies.forEach((item) => {
       let val = item.split('=');
       hash[val[0]] = val[1];
     })
-    console.log(hash);
     let email = hash['login_email'];
     let foundUser;
     let users = JSON.parse(fs.readFileSync('./db/users'));
@@ -30,7 +27,6 @@ var server = http.createServer((req,res)=>{
         foundUser = item;
       }
     })
-    console.log(foundUser);
     if(foundUser){
       console.log(1)
       str = str.replace('__password__',foundUser.password)
@@ -94,7 +90,7 @@ var server = http.createServer((req,res)=>{
             //用户名密码正确
             res.statusCode = 200;
             res.setHeader('Content-Type','application/json;utf-8');
-            res.setHeader('Set-Cookie',`login_email=${email}`);
+            res.setHeader('Set-Cookie',[`login_email=${email}`,'Version=1','Domain=abc.com']);
             res.write(`{
               "data":{
                 "success":"登录成功"
