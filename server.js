@@ -2,14 +2,15 @@ var http = require("http");
 var fs = require("fs");
 var url = require("url");
 var port = process.env.PORT || 8888;
-
+var md5 = require('md5-node');
+console.log(md5('hello'));
+let sessions = {};
 var server = http.createServer((req,res)=>{
   let temp = url.parse(req.url,true);
   let path = temp.pathname;
   let query = temp.query;
   let method = req.method.toLowerCase();
-
-  if(path === '/'){
+  if(path === '/'  && method === 'get'){
     res.statusCode = 200;
     let str = fs.readFileSync('./index.html','utf8');
     res.setHeader('Content-Type','text/html;charset=utf-8');
@@ -19,11 +20,11 @@ var server = http.createServer((req,res)=>{
       let val = item.split('=');
       hash[val[0]] = val[1];
     })
-    let email = hash['login_email'];
+    let sessionId = hash['login_email'];
     let foundUser;
     let users = JSON.parse(fs.readFileSync('./db/users'));
     users.forEach((item) => {
-      if(item.email === email){
+      if(item.email === sessions[sessionId]){
         foundUser = item;
       }
     })
@@ -35,6 +36,23 @@ var server = http.createServer((req,res)=>{
 
     }
     res.write(str);
+    res.end();
+  }else if(path === '/'  && method === 'post'){
+    res.statusCode = 200;
+    res.setHeader('Content-Type','text/html;charset=utf-8');
+    let cookies = req.headers.cookie === undefined ? [] : req.headers.cookie.split('; ');
+    let hash = {};
+    cookies.forEach((item) => {
+      let val = item.split('=');
+      hash[val[0]] = val[1];
+    })
+    let email = hash['login_email'];
+    res.setHeader('Set-Cookie',[`login_email=${email}`,'Version=1','Domain=abc.com']);
+    res.write(`
+      {
+        "success":"logout"
+      }
+    `);
     res.end();
   }else if(path === '/login' && method === 'get'){
     res.statusCode = 200;
@@ -86,11 +104,13 @@ var server = http.createServer((req,res)=>{
               isCorrect = false;
             }
           }
+          res.setHeader('Content-Type','application/json;utf-8');
           if(isExit && isCorrect){
             //用户名密码正确
             res.statusCode = 200;
-            res.setHeader('Content-Type','application/json;utf-8');
-            res.setHeader('Set-Cookie',[`login_email=${email}`,'Version=1','Domain=abc.com']);
+            let sessionId = Math.random() * 100000;
+            sessions[sessionId] = email;
+            res.setHeader('Set-Cookie',[`login_email=${sessionId}`,'Version=1','Domain=abc.com']);
             res.write(`{
               "data":{
                 "success":"登录成功"
