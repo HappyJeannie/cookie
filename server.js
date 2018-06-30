@@ -37,20 +37,20 @@ var server = http.createServer((req,res)=>{
     }
     res.write(str);
     res.end();
-  }else if(path === '/'  && method === 'post'){
+  }else if(path === '/logout'  && method === 'post'){
     res.statusCode = 200;
-    res.setHeader('Content-Type','text/html;charset=utf-8');
+    res.setHeader('Content-Type','application/json;utf-8');
     let cookies = req.headers.cookie === undefined ? [] : req.headers.cookie.split('; ');
     let hash = {};
     cookies.forEach((item) => {
       let val = item.split('=');
       hash[val[0]] = val[1];
     })
-    let email = hash['login_email'];
-    res.setHeader('Set-Cookie',[`login_email=${email}`,'Version=1','Domain=abc.com']);
+    let sessionId = hash['login_email'];
+    res.setHeader('Set-Cookie',`login_email=${sessionId};Version=1;max-age=0`);
     res.write(`
       {
-        "success":"logout"
+        "success":"ok"
       }
     `);
     res.end();
@@ -110,7 +110,7 @@ var server = http.createServer((req,res)=>{
             res.statusCode = 200;
             let sessionId = Math.random() * 100000;
             sessions[sessionId] = email;
-            res.setHeader('Set-Cookie',[`login_email=${sessionId}`,'Version=1','Domain=abc.com']);
+            res.setHeader('Set-Cookie',`login_email=${sessionId};Version=1;max-age=360000`);
             res.write(`{
               "data":{
                 "success":"登录成功"
@@ -223,10 +223,17 @@ var server = http.createServer((req,res)=>{
         res.end();
       })
   }else if(path === '/style.css'){
-    res.statusCode = 200;
-    let str = fs.readFileSync('./style.css','utf8');
-    res.setHeader('Content-Type','text/css');
-    res.write(str);
+    console.log(req.headers)
+    let str = fs.readFileSync('./style.css','utf-8');
+    res.setHeader('Content-Type','text/css;charset=utf-8');
+    let fileMd5 = md5(str);                                 // 针对 base.css 文件生成 md5 值
+    if(req.headers['if-none-match'] === fileMd5){
+      res.statusCode = 304;
+    }else{
+      res.setHeader('ETag',fileMd5);                          // 通过 ETag 将 md5 值传递到客户端，此时客户端收到响应会在
+      res.statusCode = 200;
+      res.write(str);
+    }
     res.end();
   }else if(path === '/main.js'){
     res.statusCode = 200;

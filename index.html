@@ -14,11 +14,14 @@
   <script>
     $('#btn').on('click',function(){
       $.post({
-        url:'/'
+        url:'/logout'
       }).then(
         (res) => {
           console.log('请求成功')
           console.log(res);
+          if(res.success === 'ok'){
+            window.location.href = '/';
+          }
         }
       )
     })
